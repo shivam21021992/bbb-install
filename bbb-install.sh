@@ -814,49 +814,7 @@ install_docker() {
 }
 
 
-install_ssl() {
-  if ! grep -q "$HOST" /usr/local/bigbluebutton/core/scripts/bigbluebutton.yml; then
-    bbb-conf --setip "$HOST"
-  fi
 
-  mkdir -p /etc/nginx/ssl
-
-  if [ -z "$PROVIDED_CERTIFICATE" ]; then
-    add-apt-repository universe
-    need_ppa certbot-ubuntu-certbot-xenial.list ppa:certbot/certbot 75BCA694
-    apt-get update
-    need_pkg certbot
-  fi
-
-  if [ ! -f /etc/nginx/ssl/dhp-4096.pem ]; then
-    openssl dhparam -dsaparam  -out /etc/nginx/ssl/dhp-4096.pem 4096
-  fi
-
-  if [ ! -f "/etc/letsencrypt/live/$HOST/fullchain.pem" ]; then
-    rm -f /tmp/bigbluebutton.bak
-    if ! grep -q "$HOST" /etc/nginx/sites-available/bigbluebutton; then  # make sure we can do the challenge
-      if [ -f /etc/nginx/sites-available/bigbluebutton ]; then
-        cp /etc/nginx/sites-available/bigbluebutton /tmp/bigbluebutton.bak
-      fi
-      cat <<HERE > /etc/nginx/sites-available/bigbluebutton
-server_tokens off;
-server {
-  listen 80;
-  listen [::]:80;
-  server_name $HOST;
-
-  access_log  /var/log/nginx/bigbluebutton.access.log;
-
-  # BigBlueButton landing page.
-  location / {
-    root   /var/www/bigbluebutton-default;
-    index  index.html index.htm;
-    expires 1m;
-  }
-}
-HERE
-      systemctl restart nginx
-    fi
 
     if [ -z "$PROVIDED_CERTIFICATE" ]; then
       if ! certbot --email "$EMAIL" --agree-tos --rsa-key-size 4096 -w /var/www/bigbluebutton-default/ \
